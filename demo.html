@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+    <script type="text/javascript" src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script type="text/javascript" src="commonUtils.js"></script>
+	<script>
+        $(function(){
+            var data = {
+                user :{
+                    id:1,
+                    name:'张三'
+                },
+                select: 1,
+                radio: 1,
+                checkbox:'1,2'//用数组判断会乱
+            };
+            util.bind(data);
+            $("#btnSave").click(function () {
+                data = util.getBind();
+                console.log(data);
+                var rule = {
+                    rule:{title: "规则",required:true}
+                };
+                if(util.validate(data,rule)){
+                    alert('成功');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div>
+        <form>
+            <table>
+                    <tr>
+                        <td>主键</td>
+                        <td>
+                            <input type="text" ng-model="user.id" />
+                        </td>
+                        <td>姓名</td>
+                        <td>
+                            <input type="text" ng-model="user.name" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>检验无值</td>
+                        <td>
+                            <input type="text" ng-model="rule" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>selectc测试</td>
+                        <td>
+                            <select ng-model="select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>radio测试</td>
+                        <td>
+                            <input type="radio" ng-model="radio" value="1" />1
+                            <input type="radio" ng-model="radio" value="2" />2
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>checkbox测试</td>
+                        <td>
+                            <input type="checkbox" ng-model="checkbox" value="1" />1
+                            <input type="checkbox" ng-model="checkbox" value="2" />2
+                            <input type="checkbox" ng-model="checkbox" value="3" />3
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align:center;">
+                            <input id="btnSave" type="button" value="提交" />
+                        </td>
+                    </tr>
+                </table>
+        </form>
+    </div>
+</body>
+</html>
