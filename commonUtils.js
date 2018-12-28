@@ -116,9 +116,12 @@ util.getBind = function () {
 };
 
 util.validate = function(model, validations) {
-    for (var key in validations) {
+    model = util.recombine(model);
+    for(var key in model){
         var value = model[key];
-        var rule = validations[key]; //用户的规则配置
+        if($("[ng-model='" + key + "']").length < 1) continue;
+        var rule = eval("validations." + key); //用户的规则配置
+        if(undefined == rule)continue;
         var title = rule.title;
         for (var ruleKey in rule) {
             var ruleValidator = validationRules[ruleKey];
@@ -153,13 +156,13 @@ function isNumber(val) {
 var validationRules = {
     required: {
         validator: function (value, option) {
-            return value ? true : false;
+            return (undefined != value) ? true : false;
         },
         message: '${title}不能为空!'
     },
     maxLength: {
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = 0;
             if(value instanceof Array){
                 angular.forEach(value, function(data){
@@ -174,7 +177,7 @@ var validationRules = {
     },
     minLength: {
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = 0;
             if(value instanceof Array){
                 angular.forEach(value, function(data){
@@ -189,7 +192,7 @@ var validationRules = {
     },
     lengthEquals: { // 值是否等于指定长度
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = 0;
             if(value instanceof Array){
                 angular.forEach(value, function(data){
@@ -204,14 +207,14 @@ var validationRules = {
     },
     integer: { // 整形数字
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             return /^[-]?[1-9]+\d*$/i.test(value);
         },
         message: '${title}必须为整数!'
     },
     number: { //数字
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value);
             var reg = /^(\-|\+)?([1-9]([0-9]+)?|[0-9])(\.[0-9]+)?$/;
             return reg.test(len);
@@ -220,7 +223,7 @@ var validationRules = {
     },
     numberOrLetter: { //数字
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var reg = /^[0-9a-zA-Z]*$/g;
             return reg.test(value);
         },
@@ -228,27 +231,27 @@ var validationRules = {
     },
     phone: { // 座机号码
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             return /^\d{3,4}([\-]{1})?\d{7,8}$/.test(value);
         },
         message: '${title}必须为合法的座机号码,如：[010-88888888]!'
     },
     mobile: { // 手机号码
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             return /^1\d{10}$/.test(value);
         },
         message: '${title}必须为合法的手机号码!'
     },
     custom: {
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             return option(value);
         }
     },
     mix:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value);
             return parseFloat(len) >= parseFloat(option);
         },
@@ -256,7 +259,7 @@ var validationRules = {
     },
     max:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value);
             return parseFloat(len) <= parseFloat(option);
         },
@@ -264,7 +267,7 @@ var validationRules = {
     },
     money:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value);
             var reg = /(^(\-|\+)?[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
             return reg.test(len);
@@ -273,7 +276,7 @@ var validationRules = {
     },
     unicode:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value);
             var reg = /^[\u4e00-\u9fa5]+$/;
             return reg.test(len);
@@ -282,7 +285,7 @@ var validationRules = {
     },
     url:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var strRegex = "^((https|http)?://)"
             + "(([0-9]{1,3}\.){3}[0-9]{1,3}" // IP形式的URL- 199.194.52.184
             + "|" // 允许IP和DOMAIN（域名）
@@ -299,7 +302,7 @@ var validationRules = {
     },
     ip:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             if(value == '%') return true;
             var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
             return reg.test(value);
@@ -308,7 +311,7 @@ var validationRules = {
     },
     email:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
             return reg.test(value);
         },
@@ -316,7 +319,7 @@ var validationRules = {
     },
     mixDecimalPointLength:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value).toString().split(".")[1].length;
             return parseFloat(len) >= parseFloat(option);
         },
@@ -324,7 +327,7 @@ var validationRules = {
     },
     maxDecimalPointLength:{
         validator: function (value, option) {
-            if(!value) return true;
+            if(undefined == value) return true;
             var len = $.trim(value).toString().split(".")[1].length;
             return parseFloat(len) <= parseFloat(option);
         },

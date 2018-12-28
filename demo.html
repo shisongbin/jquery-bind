@@ -13,7 +13,7 @@
                     name:'张三'
                 },
                 select: 1,
-                radio: 1,
+                radio: 0,
                 checkbox:'1,2'//用数组判断会乱
             };
             util.bind(data);
@@ -21,7 +21,13 @@
                 data = util.getBind();
                 console.log(data);
                 var rule = {
-                    rule:{title: "规则",required:true}
+                    user:{
+                        id:{title: "主键",required:true},
+                        name:{title: "名字",required:true},
+                    },
+                    rule:{title: "规则1",required:true},
+                    rule2:{title: "规则2",required:true},
+                    select:{title: "select",required:true}
                 };
                 if(util.validate(data,rule)){
                     alert('成功');
@@ -54,6 +60,8 @@
                         <td>selectc测试</td>
                         <td>
                             <select ng-model="select">
+                                <option value>null</option>
+                                <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
                                 <option value="3">3</option>
@@ -64,8 +72,8 @@
                     <tr>
                         <td>radio测试</td>
                         <td>
+                            <input type="radio" ng-model="radio" value="0" />0
                             <input type="radio" ng-model="radio" value="1" />1
-                            <input type="radio" ng-model="radio" value="2" />2
                         </td>
                     </tr>
 
