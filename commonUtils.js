@@ -78,8 +78,10 @@ util.bind = function (objData) {
                 } else {
                     $(this).val(value);
                 }
-            } else if (tagName == 'SELECT' || tagName == 'TEXTAREA') {
+            } else if (tagName == 'SELECT') {
                 $(this).val(value);
+            } else if(tagName == 'TEXTAREA') {
+                $(this).val(""+value);
             }
         });
     }
