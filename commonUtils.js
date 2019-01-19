@@ -1,4 +1,4 @@
-util = {};
+var util = {};
 
 /*
 *数据对象重组
@@ -39,11 +39,7 @@ util.restore =function(data){
             }
         }
         if(data[k]){
-            if(isNumber(data[k])){
-                eval("objData." + k + "=" + data[k]);
-            }else{
-                eval("objData." + k + "='" + data[k] +"'");
-            }
+            eval("objData." + k + "='" + data[k] +"'");
         }else{
             eval("objData." + k + "= null");
         }
@@ -80,8 +76,10 @@ util.bind = function (objData) {
                 }
             } else if (tagName == 'SELECT') {
                 $(this).val(value);
-            } else if(tagName == 'TEXTAREA') {
-                $(this).val(""+value);
+            } else if (tagName == 'TEXTAREA') {
+                $(this).val('' + value);
+            }else{
+                $(this).val('' + value);
             }
         });
     }
@@ -110,7 +108,11 @@ util.getBind = function () {
             } else {
                 data[key] = $(this).val();
             }
-        } else if (tagName == 'SELECT' || tagName == 'TEXTAREA') {
+        } else if (tagName == 'SELECT') {
+            data[key] = $(this).val();
+        } else if (tagName == 'TEXTAREA') {
+            data[key] = $(this).val().replace(new RegExp('\n','gm'),'\\n');
+        }else{
             data[key] = $(this).val();
         }
     });
@@ -121,8 +123,11 @@ util.validate = function(model, validations) {
     model = util.recombine(model);
     for(var key in model){
         var value = model[key];
-        if($("[ng-model='" + key + "']").length < 1) continue;
-        var rule = eval("validations." + key); //用户的规则配置
+        // if($("[ng-model='" + key + "']").length < 1) continue;
+        var rule;
+        try {
+            rule = eval("validations." + key); //用户的规则配置
+        }catch(e){}
         if(undefined == rule)continue;
         var title = rule.title;
         for (var ruleKey in rule) {
@@ -144,32 +149,39 @@ util.validate = function(model, validations) {
     return true;
 };
 
-
-function isNumber(val) {
-    var regPos = /^\d+(\.\d+)?$/; //非负浮点数
-    var regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
-    if(regPos.test(val) || regNeg.test(val)) {
-        return true;
-    } else {
-        return false;
+/*
+*树状的算法
+*@params list     代转化数组
+*@params parentId 起始节点
+*/
+util.getTrees = function(list, parentId) {
+    var items= {};
+    // 获取每个节点的直属子节点，*记住是直属，不是所有子节点
+    for (var i = 0; i < list.length; i++) {
+        var key = list[i].parentId;
+        if (items[key]) {
+            items[key].push(list[i]);
+        } else {
+            items[key] = [];
+            items[key].push(list[i]);
+        }
     }
+    return formatTree(items, parentId);
 }
 
 var validationRules = {
     required: {
         validator: function (value, option) {
-            return (undefined != value) ? true : false;
+            return (undefined == value || '' == (''+$.trim(value))) ? false : true;
         },
         message: '${title}不能为空!'
     },
     maxLength: {
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = 0;
             if(value instanceof Array){
-                angular.forEach(value, function(data){
-                    if(data) len ++;
-                });
+                len = value.length;
             }else{
                 len = $.trim(value).length;
             }
@@ -179,12 +191,10 @@ var validationRules = {
     },
     minLength: {
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = 0;
             if(value instanceof Array){
-                angular.forEach(value, function(data){
-                    if(data) len ++;
-                });
+                len = value.length;
             }else{
                 len = $.trim(value).length;
             }
@@ -194,12 +204,10 @@ var validationRules = {
     },
     lengthEquals: { // 值是否等于指定长度
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = 0;
             if(value instanceof Array){
-                angular.forEach(value, function(data){
-                    if(data) len ++;
-                });
+                len = value.length;
             }else{
                 len = $.trim(value).length;
             }
@@ -209,14 +217,21 @@ var validationRules = {
     },
     integer: { // 整形数字
         validator: function (value, option) {
-            if(undefined == value) return true;
-            return /^[-]?[1-9]+\d*$/i.test(value);
+            if(undefined == value || '' == (''+$.trim(value))) return true;
+            return /^(([-]?[1-9]+\d*)|0)$/.test(value);
         },
         message: '${title}必须为整数!'
     },
+    positiveInteger: { // 整形数字
+        validator: function (value, option) {
+            if(undefined == value || '' == (''+$.trim(value))) return true;
+            return /^([1-9]+\d*)$/.test(value);
+        },
+        message: '${title}必须为正整数!'
+    },
     number: { //数字
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value);
             var reg = /^(\-|\+)?([1-9]([0-9]+)?|[0-9])(\.[0-9]+)?$/;
             return reg.test(len);
@@ -225,7 +240,7 @@ var validationRules = {
     },
     numberOrLetter: { //数字
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var reg = /^[0-9a-zA-Z]*$/g;
             return reg.test(value);
         },
@@ -233,27 +248,27 @@ var validationRules = {
     },
     phone: { // 座机号码
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             return /^\d{3,4}([\-]{1})?\d{7,8}$/.test(value);
         },
         message: '${title}必须为合法的座机号码,如：[010-88888888]!'
     },
     mobile: { // 手机号码
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             return /^1\d{10}$/.test(value);
         },
         message: '${title}必须为合法的手机号码!'
     },
     custom: {
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             return option(value);
         }
     },
     mix:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value);
             return parseFloat(len) >= parseFloat(option);
         },
@@ -261,7 +276,7 @@ var validationRules = {
     },
     max:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value);
             return parseFloat(len) <= parseFloat(option);
         },
@@ -269,7 +284,7 @@ var validationRules = {
     },
     money:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value);
             var reg = /(^(\-|\+)?[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
             return reg.test(len);
@@ -278,7 +293,7 @@ var validationRules = {
     },
     unicode:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value);
             var reg = /^[\u4e00-\u9fa5]+$/;
             return reg.test(len);
@@ -287,7 +302,7 @@ var validationRules = {
     },
     url:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var strRegex = "^((https|http)?://)"
             + "(([0-9]{1,3}\.){3}[0-9]{1,3}" // IP形式的URL- 199.194.52.184
             + "|" // 允许IP和DOMAIN（域名）
@@ -304,7 +319,7 @@ var validationRules = {
     },
     ip:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             if(value == '%') return true;
             var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
             return reg.test(value);
@@ -313,7 +328,7 @@ var validationRules = {
     },
     email:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
             return reg.test(value);
         },
@@ -321,7 +336,7 @@ var validationRules = {
     },
     mixDecimalPointLength:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value).toString().split(".")[1].length;
             return parseFloat(len) >= parseFloat(option);
         },
@@ -329,10 +344,106 @@ var validationRules = {
     },
     maxDecimalPointLength:{
         validator: function (value, option) {
-            if(undefined == value) return true;
+            if(undefined == value || '' == (''+$.trim(value))) return true;
             var len = $.trim(value).toString().split(".")[1].length;
             return parseFloat(len) <= parseFloat(option);
         },
         message: '${title}小数点后长度必须小于等于${option}!'
     }
 };
+
+function fmtDate(fmt, date) {
+    var o = {
+        "M+": date.getMonth() + 1,                 //月份
+        "d+": date.getDate(),                    //日
+        "h+": date.getHours(),                   //小时
+        "m+": date.getMinutes(),                 //分
+        "s+": date.getSeconds(),                 //秒
+        "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+        "S": date.getMilliseconds()             //毫秒
+    };
+    if (/(y+)/.test(fmt))
+        fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+            fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+}
+
+/*
+*利用递归格式化每个节点
+*items 源数据
+*parentid 父ID
+*return
+*/
+function formatTree(items, parentId) {
+    var result = [];
+    if (!items[parentId]) {
+        return result;
+    }
+    for (var k in items[parentId]) {
+        var t = items[parentId][k];
+        t.children = formatTree(items, t.id)
+        result.push(t);
+    }
+    return result;
+}
+
+
+/**
+ * 校验整数
+ * @param t 输入的控件
+ * @param max 最大值
+ */
+var numberCheck = function (t,max) {
+    var num = t.value;
+    var re=/^\d*$/;
+    if(!re.test(num)){
+        isNaN(parseInt(num))?t.value='':t.value=parseInt(num);
+    }
+    if(t.value>max){
+        t.value=max;
+    }
+}
+
+/**
+ * 校验整数
+ * @param e 输入的控件
+ * @param num 最大小数位
+ */
+var validationNumber = function(e,num,maxValue) {
+    var regu = /^[0-9]+\.?[0-9]*$/;
+    if (e.value != "") {
+        if (!regu.test(e.value)) {
+            alert("请输入正确的数字");
+            e.value = '';
+            e.focus();
+            return;
+        }
+        if(e.value.charAt(0)=='0'&&e.value!='0'&&e.value.indexOf('.')!=1){
+            alert("数字不能以0开头");
+            return;
+        } else {
+            if (num == 0) {
+                if (e.value.indexOf('.') > -1) {
+                    e.value = e.value.substring(0, e.value.length - 1);
+                    e.focus();
+                    alert("只能输入整数");
+                    return;
+                }
+            }
+            if (e.value.indexOf('.') > -1) {
+                if (e.value.split('.')[1].length > num) {
+                    var w = e.value.indexOf('.');
+                    e.value = e.value.substring(0, w+num+1);
+                    e.focus();
+                    alert("只能输入"+num+"位小数");
+                    return;
+                }
+            }
+        }
+        if((!isNaN(maxValue))&&e.value>maxValue){
+            e.value=maxValue;
+        }
+    }
+}
